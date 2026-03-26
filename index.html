@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quantum two-dice — try online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c0f12;
+      --surface: #151a21;
+      --border: #2a3340;
+      --text: #e8edf4;
+      --muted: #8b98ab;
+      --accent: #3ee0b8;
+      --accent-dim: #1f8f75;
+      --warn: #ffb14a;
+      --die-face: #f4f1ea;
+      --die-pip: #1a1a1a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Outfit", system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse 120% 80% at 50% -20%, #1a2838 0%, transparent 55%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: clamp(1.25rem, 4vw, 2.5rem);
+    }
+
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 38em;
+    }
+
+    .grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 720px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem;
+    }
+
+    .panel h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin: 0 0 1rem;
+      font-weight: 600;
+    }
+
+    .dice-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .die {
+      width: 5.5rem;
+      height: 5.5rem;
+      background: var(--die-face);
+      border-radius: 14px;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.65),
+        0 12px 28px rgba(0, 0, 0, 0.45);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 0.65rem;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .die.shaking {
+      animation: shake 0.45s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotate(0deg) translate(0, 0); }
+      20% { transform: rotate(-6deg) translate(-2px, 1px); }
+      40% { transform: rotate(5deg) translate(2px, -1px); }
+      60% { transform: rotate(-4deg) translate(1px, 2px); }
+      80% { transform: rotate(3deg) translate(-1px, -1px); }
+    }
+
+    .die .pip {
+      width: 0.72rem;
+      height: 0.72rem;
+      background: var(--die-pip);
+      border-radius: 50%;
+      align-self: center;
+      justify-self: center;
+      opacity: 0;
+    }
+
+    .die[data-value="1"] .pip:nth-child(5),
+    .die[data-value="2"] .pip:nth-child(1),
+    .die[data-value="2"] .pip:nth-child(9),
+    .die[data-value="3"] .pip:nth-child(1),
+    .die[data-value="3"] .pip:nth-child(5),
+    .die[data-value="3"] .pip:nth-child(9),
+    .die[data-value="4"] .pip:nth-child(1),
+    .die[data-value="4"] .pip:nth-child(3),
+    .die[data-value="4"] .pip:nth-child(7),
+    .die[data-value="4"] .pip:nth-child(9),
+    .die[data-value="5"] .pip:nth-child(1),
+    .die[data-value="5"] .pip:nth-child(3),
+    .die[data-value="5"] .pip:nth-child(5),
+    .die[data-value="5"] .pip:nth-child(7),
+    .die[data-value="5"] .pip:nth-child(9),
+    .die[data-value="6"] .pip:nth-child(1),
+    .die[data-value="6"] .pip:nth-child(3),
+    .die[data-value="6"] .pip:nth-child(4),
+    .die[data-value="6"] .pip:nth-child(6),
+    .die[data-value="6"] .pip:nth-child(7),
+    .die[data-value="6"] .pip:nth-child(9) {
+      opacity: 1;
+    }
+
+    .die-label {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      width: 100%;
+    }
+
+    .sum-display {
+      text-align: center;
+      padding: 1rem 0 0.5rem;
+    }
+
+    .sum-display .label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .sum-display .value {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(3rem, 12vw, 4rem);
+      line-height: 1.1;
+      color: var(--accent);
+    }
+
+    .sum-display .range {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
+    button {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.65rem 1.1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    button:hover {
+      border-color: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    button.primary {
+      background: linear-gradient(145deg, #2a3d38, #1e2e2a);
+      border-color: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    button.primary:hover {
+      border-color: var(--accent);
+      filter: brightness(1.08);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .stats {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 0.75rem;
+    }
+
+    .chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 140px;
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .bar {
+      width: 100%;
+      max-width: 28px;
+      background: linear-gradient(180deg, var(--accent), var(--accent-dim));
+      border-radius: 4px 4px 0 0;
+      min-height: 2px;
+      transition: height 0.25s ease;
+    }
+
+    .bar-wrap span {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .explain {
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .explain code {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.82em;
+      background: var(--bg);
+      padding: 0.12em 0.35em;
+      border-radius: 4px;
+      color: var(--warn);
+    }
+
+    .explain ul {
+      margin: 0.75rem 0 0;
+      padding-left: 1.2rem;
+    }
+
+    .explain li {
+      margin-bottom: 0.4rem;
+    }
+
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Quantum two-dice</h1>
+      <p>
+        Each “measurement” draws two independent faces <strong>1–6</strong>, same statistics as the
+        six-qubit Qiskit circuit in this project. The <strong>sum</strong> is shown — possible values are
+        <strong>2</strong> through <strong>12</strong>.
+      </p>
+    </header>
+
+    <div class="grid">
+      <section class="panel" aria-labelledby="play-heading">
+        <h2 id="play-heading">Measure</h2>
+        <div class="dice-row" aria-live="polite">
+          <div>
+            <div class="die" id="die-a" data-value="1" role="img" aria-label="Die A, value 1">
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            </div>
+            <div class="die-label">Die A</div>
+          </div>
+          <div>
+            <div class="die" id="die-b" data-value="1" role="img" aria-label="Die B, value 1">
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+              <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            </div>
+            <div class="die-label">Die B</div>
+          </div>
+        </div>
+        <div class="sum-display">
+          <div class="label">Sum</div>
+          <div class="value" id="sum-out">2</div>
+          <div class="range">Outcomes: 2, 3, 4, … , 12</div>
+        </div>
+        <div class="actions">
+          <button type="button" class="primary" id="btn-measure">Measure once</button>
+          <button type="button" id="btn-burst">Run 500 shots</button>
+          <button type="button" id="btn-reset">Reset histogram</button>
+        </div>
+        <p class="stats" id="stats-line">Total measurements: 0</p>
+      </section>
+
+      <section class="panel" aria-labelledby="hist-heading">
+        <h2 id="hist-heading">Sum histogram</h2>
+        <div class="chart" id="chart" role="img" aria-label="Bar chart of sum counts"></div>
+        <p class="stats" id="hist-note">Roll to populate the chart.</p>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top: 1.5rem;">
+      <h2>How this matches the circuit</h2>
+      <div class="explain">
+        <p>
+          The Python demo prepares <code>|ψ⟩ ⊗ |ψ⟩</code> on six qubits: three per die, uniform over faces
+          <code>001</code> … <code>110</code>, then measures. In the browser we sample the same
+          distribution: two independent uniform integers in <code>1…6</code>, using
+          <code>crypto.getRandomValues</code> when available.
+        </p>
+        <ul>
+          <li>Many shots should show a peak at sum <strong>7</strong> and rare <strong>2</strong> / <strong>12</strong>, like real dice.</li>
+          <li>For the full Qiskit program and CLI, see <code>quantum_two_dice.py</code> and <code>README.md</code>.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      Offline-friendly: open this file in any modern browser. For the simulator backend, run
+      <code style="font-family: JetBrains Mono, monospace; font-size: 0.85em;">python quantum_two_dice.py</code>
+      locally.
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var HIST_LEN = 13;
+      var hist = new Array(HIST_LEN);
+      for (var i = 0; i < HIST_LEN; i++) hist[i] = 0;
+      var total = 0;
+
+      var dieA = document.getElementById("die-a");
+      var dieB = document.getElementById("die-b");
+      var sumOut = document.getElementById("sum-out");
+      var statsLine = document.getElementById("stats-line");
+      var chartEl = document.getElementById("chart");
+      var histNote = document.getElementById("hist-note");
+      var btnMeasure = document.getElementById("btn-measure");
+      var btnBurst = document.getElementById("btn-burst");
+      var btnReset = document.getElementById("btn-reset");
+
+      function randInt1to6() {
+        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+          var buf = new Uint32Array(1);
+          crypto.getRandomValues(buf);
+          return (buf[0] % 6) + 1;
+        }
+        return Math.floor(Math.random() * 6) + 1;
+      }
+
+      function setDie(el, n) {
+        el.setAttribute("data-value", String(n));
+        el.setAttribute("aria-label", el.id === "die-a" ? "Die A, value " + n : "Die B, value " + n);
+      }
+
+      function renderChart() {
+        var max = 1;
+        for (var s = 2; s <= 12; s++) {
+          if (hist[s] > max) max = hist[s];
+        }
+        chartEl.innerHTML = "";
+        for (var sum = 2; sum <= 12; sum++) {
+          var wrap = document.createElement("div");
+          wrap.className = "bar-wrap";
+          var bar = document.createElement("div");
+          bar.className = "bar";
+          var h = total === 0 ? 0 : Math.round((hist[sum] / max) * 120);
+          bar.style.height = h + "px";
+          bar.title = "Sum " + sum + ": " + hist[sum] + " hits";
+          var lbl = document.createElement("span");
+          lbl.textContent = sum;
+          wrap.appendChild(bar);
+          wrap.appendChild(lbl);
+          chartEl.appendChild(wrap);
+        }
+        histNote.textContent =
+          total === 0
+            ? "Roll to populate the chart."
+            : "Max count in any bin: " + max + " (scaled to bar height).";
+      }
+
+      function recordSum(s) {
+        hist[s]++;
+        total++;
+        statsLine.textContent = "Total measurements: " + total;
+        sumOut.textContent = String(s);
+        renderChart();
+      }
+
+      function measureOnce(animate) {
+        if (animate) {
+          dieA.classList.add("shaking");
+          dieB.classList.add("shaking");
+        }
+        var a = randInt1to6();
+        var b = randInt1to6();
+        function apply() {
+          setDie(dieA, a);
+          setDie(dieB, b);
+          recordSum(a + b);
+          dieA.classList.remove("shaking");
+          dieB.classList.remove("shaking");
+        }
+        if (animate) {
+          window.setTimeout(apply, 200);
+        } else {
+          apply();
+        }
+      }
+
+      btnMeasure.addEventListener("click", function () {
+        measureOnce(true);
+      });
+
+      btnBurst.addEventListener("click", function () {
+        btnMeasure.disabled = true;
+        btnBurst.disabled = true;
+        var i = 0;
+        var batch = 500;
+        function step() {
+          var end = Math.min(i + 80, batch);
+          for (; i < end; i++) {
+            measureOnce(false);
+          }
+          if (i < batch) {
+            requestAnimationFrame(step);
+          } else {
+            btnMeasure.disabled = false;
+            btnBurst.disabled = false;
+          }
+        }
+        step();
+      });
+
+      btnReset.addEventListener("click", function () {
+        for (var s = 0; s < HIST_LEN; s++) hist[s] = 0;
+        total = 0;
+        statsLine.textContent = "Total measurements: 0";
+        setDie(dieA, 1);
+        setDie(dieB, 1);
+        sumOut.textContent = "2";
+        renderChart();
+      });
+
+      renderChart();
+    })();
+  </script>
+</body>
+</html>
